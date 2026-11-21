@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/sujaan13/spotify-scroll-lock-patches/compare/v1.0.0...v1.0.1) (2026-11-21)
+
+### 🐛 Bug Fixes
+
+* default to NowPlayingScrollView ([19435cd](https://github.com/sujaan13/spotify-scroll-lock-patches/commit/19435cd89d1ecb91f7d09cc8ffaf633375a45f46))
+
 ## 1.0.0 (2026-11-21)
 
 ### ✨ New Features

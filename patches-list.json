@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "patches": [
     {
       "name": "Now Playing scroll lock",
@@ -34,7 +34,7 @@
           "description": "Full class name of the view that scrolls the Now Playing screen, for example com.spotify.foo.NowPlayingScrollView. Leave empty to auto-detect.",
           "required": false,
           "type": "kotlin.String",
-          "default": "",
+          "default": "com.spotify.nowplaying.scroll.view.NowPlayingScrollView",
           "values": null
         }
       ]
