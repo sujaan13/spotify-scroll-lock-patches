@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Collections;
 import java.util.Map;
@@ -63,6 +64,18 @@ public final class NowPlayingScrollLockPatch {
 
     private static String targetName;
 
+    /** Temporary diagnostics: set to false once the button works. */
+    private static final boolean DEBUG = true;
+    private static final Set<String> shownDebug = new java.util.HashSet<>();
+
+    private static void debug(Context context, String message) {
+        if (!DEBUG || context == null || !shownDebug.add(message)) return;
+        try {
+            Toast.makeText(context.getApplicationContext(), "ScrollLock: " + message, Toast.LENGTH_LONG).show();
+        } catch (Exception ignored) {
+        }
+    }
+
     private static boolean isTarget(View view) {
         if (view == null) return false;
         if (targetName == null) targetName = targetClassName();
@@ -73,6 +86,7 @@ public final class NowPlayingScrollLockPatch {
     public static void onScrollViewAttached(View view) {
         try {
             if (!isTarget(view)) return;
+            debug(view.getContext(), "attached " + targetName);
             loadPrefs(view.getContext());
 
             if (targets.add(view)) {
@@ -88,12 +102,14 @@ public final class NowPlayingScrollLockPatch {
                 });
             }
             view.post(() -> attachButton(view));
-        } catch (Exception ignored) {
+        } catch (Exception e) {
             // Never crash Spotify because of the lock button.
+            debug(view.getContext(), "attach error " + e);
         }
     }
 
     public static MotionEvent filterMotionEvent(View view, MotionEvent event) {
+        if (view != null && isTarget(view)) debug(view.getContext(), "touch hook OK");
         blockCurrentCall = shouldBlock(view);
         if (!blockCurrentCall || event == null || event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
             return event;
@@ -173,7 +189,10 @@ public final class NowPlayingScrollLockPatch {
             ViewGroup container = contentView instanceof FrameLayout
                     ? (ViewGroup) contentView
                     : (root instanceof FrameLayout ? (ViewGroup) root : null);
-            if (container == null) return;
+            if (container == null) {
+                debug(target.getContext(), "no container for button");
+                return;
+            }
 
             Context context = target.getContext();
             int size = dp(context, BUTTON_SIZE_DP);
@@ -232,7 +251,9 @@ public final class NowPlayingScrollLockPatch {
             target.getViewTreeObserver().addOnPreDrawListener(preDraw);
             button.setTag(preDraw);
             positionButton(target, button, container);
-        } catch (Exception ignored) {
+            debug(context, "button added");
+        } catch (Exception e) {
+            debug(target.getContext(), "button error " + e);
         }
     }
 
@@ -249,30 +270,26 @@ public final class NowPlayingScrollLockPatch {
     }
 
     private static final Rect visibleRect = new Rect();
-    private static final int[] targetLocation = new int[2];
-    private static final int[] containerLocation = new int[2];
+        private static final int[] containerLocation = new int[2];
 
     /** Keeps the button pinned to the scroll view and hidden whenever Now Playing is not on screen. */
     private static void positionButton(View target, View button, View container) {
-        boolean visible = target.isShown()
-                && target.getAlpha() > 0.5f
-                && target.getGlobalVisibleRect(visibleRect)
-                && visibleRect.height() > target.getHeight() / 2;
+        // Pin to the on-screen part of the scroll view, whatever its full height is.
+        boolean visible = target.isShown() && target.getGlobalVisibleRect(visibleRect);
         int visibility = visible ? View.VISIBLE : View.GONE;
         if (button.getVisibility() != visibility) button.setVisibility(visibility);
         if (!visible) return;
 
-        target.getLocationInWindow(targetLocation);
         container.getLocationInWindow(containerLocation);
         Context context = target.getContext();
 
-        float maxX = Math.max(0, target.getWidth() - button.getWidth());
-        float maxY = Math.max(0, target.getHeight() - button.getHeight());
+        float maxX = Math.max(0, visibleRect.width() - button.getWidth());
+        float maxY = Math.max(0, visibleRect.height() - button.getHeight());
         float x = clamp(getOffsetX(context), 0, maxX);
         float y = clamp(getOffsetY(context), 0, maxY);
 
-        button.setTranslationX(targetLocation[0] - containerLocation[0] + x);
-        button.setTranslationY(targetLocation[1] - containerLocation[1] + y);
+        button.setTranslationX(visibleRect.left - containerLocation[0] + x);
+        button.setTranslationY(visibleRect.top - containerLocation[1] + y);
     }
 
     private static float clamp(float value, float min, float max) {
