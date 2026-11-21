@@ -1,3 +1,9 @@
+## [1.0.4](https://github.com/sujaan13/spotify-scroll-lock-patches/compare/v1.0.3...v1.0.4) (2026-11-21)
+
+### 🐛 Bug Fixes
+
+* default to PeekScrollView, button on right, remove debug toasts ([0eb2ce3](https://github.com/sujaan13/spotify-scroll-lock-patches/commit/0eb2ce3b84bfebdbb187c780fa03c465393022c8))
+
 ## [1.0.3](https://github.com/sujaan13/spotify-scroll-lock-patches/compare/v1.0.2...v1.0.3) (2026-11-21)
 
 ### 🐛 Bug Fixes

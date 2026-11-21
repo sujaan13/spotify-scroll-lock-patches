@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-21T01:31:43",
-  "description": "## [1.0.3](https://github.com/sujaan13/spotify-scroll-lock-patches/compare/v1.0.2...v1.0.3) (2026-11-21)\n\n### 🐛 Bug Fixes\n\n* show lock button on visible area, add diagnostics ([855bae9](https://github.com/sujaan13/spotify-scroll-lock-patches/commit/855bae96370d5b9fe00a7d247a71ba65ededd5bf))",
-  "download_url": "https://github.com/sujaan13/spotify-scroll-lock-patches/releases/download/v1.0.3/patches-1.0.3.mpp",
+  "created_at": "2026-11-21T02:11:50",
+  "description": "## [1.0.4](https://github.com/sujaan13/spotify-scroll-lock-patches/compare/v1.0.3...v1.0.4) (2026-11-21)\n\n### 🐛 Bug Fixes\n\n* default to PeekScrollView, button on right, remove debug toasts ([0eb2ce3](https://github.com/sujaan13/spotify-scroll-lock-patches/commit/0eb2ce3b84bfebdbb187c780fa03c465393022c8))",
+  "download_url": "https://github.com/sujaan13/spotify-scroll-lock-patches/releases/download/v1.0.4/patches-1.0.4.mpp",
   "signature_download_url": "",
-  "version": "1.0.3"
+  "version": "1.0.4"
 }
