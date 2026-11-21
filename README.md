@@ -79,4 +79,9 @@ Licensed GPLv3 (inherited from the Morphe patches template).
 ## Patches list
 
 <!-- PATCHES_START EXPANDED -->
+> **[v1.0.0](https://github.com/sujaan13/spotify-scroll-lock-patches/releases/tag/v1.0.0)**&nbsp;&nbsp;&middot;&nbsp;&nbsp;`main`&nbsp;&nbsp;&middot;&nbsp;&nbsp;**1 patches** across **1 apps**&nbsp;&nbsp;&middot;&nbsp;&nbsp;[Full details](PATCHES.md)
+
+| # | App | Patches | Version | Package |
+|---|---|---|---|---|
+| 1 | [**Spotify**](PATCHES.md#spotify-comspotifymusic) | 1 | — | [`com.spotify.music`](https://play.google.com/store/apps/details?id=com.spotify.music) |
 <!-- PATCHES_END -->
