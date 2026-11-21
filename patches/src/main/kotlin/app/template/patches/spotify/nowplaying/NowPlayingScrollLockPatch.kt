@@ -16,11 +16,7 @@ import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.iface.ClassDef
-import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
-import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
-import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
-import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 import java.util.logging.Logger
@@ -66,8 +62,10 @@ val nowPlayingScrollLockPatch = patch(
 
         val target = mutableClassDefBy(targetType)
 
-        // 1. Tell the extension about every instance, right after the super constructor runs.
-        registerInstancesInConstructors(target)
+        // 1. Tell the extension which class is the Now Playing scroll view,
+        //    and notify it whenever one is attached to a window (to show the button).
+        setExtensionTargetClass(targetType)
+        hookOnAttachedToWindow(target)
 
         // 2. Gate the gestures that start a vertical scroll.
         hookBooleanMethod(
@@ -162,40 +160,65 @@ private fun isViewGroup(classDef: ClassDef): Boolean {
 
 private val String.registerWidth get() = if (this == "J" || this == "D") 2 else 1
 
-private fun MutableMethod.parameterRegisterCount() =
-    (if (AccessFlags.STATIC.isSet(accessFlags)) 0 else 1) +
-        parameterTypes.sumOf { it.toString().registerWidth }
-
-private fun registerInstancesInConstructors(target: MutableClass) {
-    val constructors = target.methods.filter { it.name == "<init>" }
-    if (constructors.isEmpty()) throw PatchException("${target.type} has no constructors.")
-
-    constructors.forEach { constructor ->
-        val implementation = constructor.implementation ?: return@forEach
-        val thisRegister = implementation.registerCount - constructor.parameterRegisterCount()
-
-        // The first <init> call on p0 is the super() or this() call. After it, p0 is usable.
-        val superInitIndex = implementation.instructions.indexOfFirst { instruction ->
-            if (instruction.opcode != Opcode.INVOKE_DIRECT && instruction.opcode != Opcode.INVOKE_DIRECT_RANGE) {
-                return@indexOfFirst false
-            }
-            val reference = (instruction as ReferenceInstruction).reference as MethodReference
-            val firstRegister = when (instruction) {
-                is FiveRegisterInstruction -> instruction.registerC
-                is RegisterRangeInstruction -> instruction.startRegister
-                else -> -1
-            }
-            reference.name == "<init>" && firstRegister == thisRegister
-        }
-        if (superInitIndex < 0) {
-            throw PatchException("Could not find the super constructor call in $constructor")
-        }
-
-        constructor.addInstructions(
-            superInitIndex + 1,
-            "invoke-static/range { p0 .. p0 }, $EXTENSION_CLASS->onScrollViewCreated($VIEW)V",
+/** Makes the extension's targetClassName() return the Java name of [targetType]. */
+private fun setExtensionTargetClass(targetType: String) {
+    val javaName = targetType.removePrefix("L").removeSuffix(";").replace('/', '.')
+    mutableClassDefBy(EXTENSION_CLASS).methods.first { it.name == "targetClassName" }
+        .addInstructions(
+            0,
+            """
+                const-string v0, "$javaName"
+                return-object v0
+            """,
         )
+}
+
+/**
+ * Calls the extension from onAttachedToWindow(). At the start of a non-constructor method
+ * p0 is always "this", so no register juggling is needed. Patched in the first class that
+ * declares it (the extension filters by class name), or added as an override.
+ */
+private fun hookOnAttachedToWindow(target: MutableClass) {
+    val name = "onAttachedToWindow"
+    val call = "invoke-static/range { p0 .. p0 }, $EXTENSION_CLASS->onScrollViewAttached($VIEW)V"
+
+    fun ClassDef.declares() = methods.any { method ->
+        method.name == name && method.returnType == "V" &&
+            method.parameterTypes.isEmpty() && method.implementation != null
     }
+
+    var type: String? = target.type
+    while (type != null) {
+        val classDef = classDefByOrNull(type) ?: break
+        if (classDef.declares()) {
+            mutableClassDefBy(classDef).methods
+                .first { it.name == name && it.returnType == "V" && it.parameterTypes.isEmpty() }
+                .addInstructions(0, call)
+            return
+        }
+        type = classDef.superclass
+    }
+
+    val superclass = target.superclass ?: throw PatchException("${target.type} has no superclass")
+    val method = ImmutableMethod(
+        target.type,
+        name,
+        emptyList(),
+        "V",
+        AccessFlags.PUBLIC.value,
+        null,
+        null,
+        MutableMethodImplementation(1),
+    ).toMutable()
+    method.addInstructions(
+        0,
+        """
+            invoke-super { p0 }, $superclass->$name()V
+            $call
+            return-void
+        """,
+    )
+    target.methods.add(method)
 }
 
 /**

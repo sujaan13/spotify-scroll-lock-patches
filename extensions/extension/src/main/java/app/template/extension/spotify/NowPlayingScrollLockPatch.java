@@ -24,7 +24,7 @@ import java.util.WeakHashMap;
  * Scroll lock for Spotify's Now Playing screen.
  * <p>
  * The patch calls into this class from the Now Playing scroll container:
- * - {@link #onScrollViewCreated(View)} from every constructor,
+ * - {@link #onScrollViewAttached(View)} from onAttachedToWindow,
  * - {@link #filterMotionEvent(View, MotionEvent)} at the start of onInterceptTouchEvent / onTouchEvent,
  * - {@link #beginCall(View)} at the start of onStartNestedScroll,
  * - {@link #filterResult(boolean)} on every return of those methods.
@@ -56,25 +56,38 @@ public final class NowPlayingScrollLockPatch {
 
     // region Hooks
 
-    public static void onScrollViewCreated(View view) {
+    /** Body replaced by the patch with the Now Playing scroll view's class name. */
+    public static String targetClassName() {
+        return "";
+    }
+
+    private static String targetName;
+
+    private static boolean isTarget(View view) {
+        if (view == null) return false;
+        if (targetName == null) targetName = targetClassName();
+        return view.getClass().getName().equals(targetName);
+    }
+
+    /** Called from onAttachedToWindow() of the scroll view (or a shared superclass). */
+    public static void onScrollViewAttached(View view) {
         try {
-            if (!targets.add(view)) return;
+            if (!isTarget(view)) return;
             loadPrefs(view.getContext());
 
-            view.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
-                @Override
-                public void onViewAttachedToWindow(View v) {
-                    v.post(() -> attachButton(v));
-                }
+            if (targets.add(view)) {
+                view.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+                    @Override
+                    public void onViewAttachedToWindow(View v) {
+                    }
 
-                @Override
-                public void onViewDetachedFromWindow(View v) {
-                    removeButton(v);
-                }
-            });
-            if (view.isAttachedToWindow()) {
-                view.post(() -> attachButton(view));
+                    @Override
+                    public void onViewDetachedFromWindow(View v) {
+                        removeButton(v);
+                    }
+                });
             }
+            view.post(() -> attachButton(view));
         } catch (Exception ignored) {
             // Never crash Spotify because of the lock button.
         }
@@ -101,7 +114,7 @@ public final class NowPlayingScrollLockPatch {
     }
 
     private static boolean shouldBlock(View view) {
-        return locked && view != null && targets.contains(view);
+        return locked && isTarget(view);
     }
 
     // endregion
