@@ -75,3 +75,8 @@ Uninstall the Play Store Spotify first, because the patched app is signed with a
 - **The screen still scrolls when you swipe on a list inside the info cards:** that list is driving the scroll through androidx nested scrolling, which uses obfuscated method names. Open an issue with the class names from `dumpsys`.
 
 Licensed GPLv3 (inherited from the Morphe patches template).
+
+## Patches list
+
+<!-- PATCHES_START EXPANDED -->
+<!-- PATCHES_END -->
