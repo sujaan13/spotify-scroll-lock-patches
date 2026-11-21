@@ -42,7 +42,8 @@ public final class NowPlayingScrollLockPatch {
     private static final String KEY_OFFSET_Y = "button_offset_y";
 
     private static final int BUTTON_SIZE_DP = 40;
-    private static final int DEFAULT_OFFSET_X_DP = 16;
+    /** Default gap between the button and the right edge. */
+    private static final int RIGHT_MARGIN_DP = 16;
     private static final int DEFAULT_OFFSET_Y_DP = 72;
 
     /** Now Playing scroll containers, weakly held. */
@@ -65,7 +66,7 @@ public final class NowPlayingScrollLockPatch {
     private static String targetName;
 
     /** Temporary diagnostics: set to false once the button works. */
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     private static final Set<String> shownDebug = new java.util.HashSet<>();
 
     private static void debug(Context context, String message) {
@@ -218,7 +219,7 @@ public final class NowPlayingScrollLockPatch {
                     case MotionEvent.ACTION_DOWN:
                         down[0] = event.getRawX();
                         down[1] = event.getRawY();
-                        down[2] = getOffsetX(context);
+                        down[2] = lastX;
                         down[3] = getOffsetY(context);
                         dragging[0] = false;
                         return true;
@@ -233,7 +234,7 @@ public final class NowPlayingScrollLockPatch {
                         return true;
                     case MotionEvent.ACTION_UP:
                         if (dragging[0]) {
-                            setOffset(getOffsetX(context), getOffsetY(context), true);
+                            setOffset(lastX, getOffsetY(context), true);
                         } else {
                             v.performClick();
                             setLocked(!locked);
@@ -285,8 +286,13 @@ public final class NowPlayingScrollLockPatch {
 
         float maxX = Math.max(0, visibleRect.width() - button.getWidth());
         float maxY = Math.max(0, visibleRect.height() - button.getHeight());
-        float x = clamp(getOffsetX(context), 0, maxX);
+        int savedX = getOffsetX();
+        // No saved position yet: sit on the right side.
+        float x = savedX < 0
+                ? Math.max(0, maxX - dp(context, RIGHT_MARGIN_DP))
+                : clamp(savedX, 0, maxX);
         float y = clamp(getOffsetY(context), 0, maxY);
+        lastX = Math.round(x);
 
         button.setTranslationX(visibleRect.left - containerLocation[0] + x);
         button.setTranslationY(visibleRect.top - containerLocation[1] + y);
@@ -296,14 +302,16 @@ public final class NowPlayingScrollLockPatch {
         return Math.max(min, Math.min(max, value));
     }
 
-    /** Cached button offset inside the scroll view, in px. -1 means not loaded yet. */
-    private static int offsetX = -1;
+    /** Cached button offset inside the visible scroll view, in px. */
+    private static final int NOT_LOADED = Integer.MIN_VALUE;
+    private static int offsetX = NOT_LOADED; // -1 means "default: right side"
     private static int offsetY = -1;
+    /** Last x the button was drawn at, used as the drag start. */
+    private static int lastX;
 
-    private static int getOffsetX(Context context) {
-        if (offsetX < 0) {
-            int fallback = dp(context, DEFAULT_OFFSET_X_DP);
-            offsetX = prefs == null ? fallback : prefs.getInt(KEY_OFFSET_X, fallback);
+    private static int getOffsetX() {
+        if (offsetX == NOT_LOADED) {
+            offsetX = prefs == null ? -1 : prefs.getInt(KEY_OFFSET_X, -1);
         }
         return offsetX;
     }

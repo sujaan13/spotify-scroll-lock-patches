@@ -50,7 +50,7 @@ val nowPlayingScrollLockPatch = patch(
 
     val scrollViewClassOption by stringOption(
         key = "scrollViewClass",
-        default = "com.spotify.nowplaying.scroll.view.NowPlayingScrollView",
+        default = "com.spotify.nowplaying.scroll.view.PeekScrollView",
         title = "Now Playing scroll view class",
         description = "Full class name of the view that scrolls the Now Playing screen, " +
             "for example com.spotify.foo.NowPlayingScrollView. Leave empty to auto-detect.",
