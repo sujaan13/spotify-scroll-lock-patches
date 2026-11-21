@@ -1,3 +1,9 @@
+## [1.0.3](https://github.com/sujaan13/spotify-scroll-lock-patches/compare/v1.0.2...v1.0.3) (2026-11-21)
+
+### 🐛 Bug Fixes
+
+* show lock button on visible area, add diagnostics ([855bae9](https://github.com/sujaan13/spotify-scroll-lock-patches/commit/855bae96370d5b9fe00a7d247a71ba65ededd5bf))
+
 ## [1.0.2](https://github.com/sujaan13/spotify-scroll-lock-patches/compare/v1.0.1...v1.0.2) (2026-11-21)
 
 ### 🐛 Bug Fixes
