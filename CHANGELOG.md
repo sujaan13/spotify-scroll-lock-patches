@@ -1,3 +1,9 @@
+## [1.0.2](https://github.com/sujaan13/spotify-scroll-lock-patches/compare/v1.0.1...v1.0.2) (2026-11-21)
+
+### 🐛 Bug Fixes
+
+* hook onAttachedToWindow instead of constructors ([76cb3f5](https://github.com/sujaan13/spotify-scroll-lock-patches/commit/76cb3f5a5f6b1f4d9d1c377763225bfc405c338f))
+
 ## [1.0.1](https://github.com/sujaan13/spotify-scroll-lock-patches/compare/v1.0.0...v1.0.1) (2026-11-21)
 
 ### 🐛 Bug Fixes
